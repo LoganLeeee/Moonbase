@@ -5,15 +5,14 @@
 #include <math.h>
 
 void Move2D(GLfloat oldx, GLfloat oldz,
-	        GLfloat angle, GLfloat distance, // angle in degrees
-	        GLfloat *resultx, GLfloat *resultz)
+	GLfloat angle, GLfloat distance, // angle in degrees
+	GLfloat *resultx, GLfloat *resultz)
 {
 	GLfloat tmpx, tmpz;
 	GLfloat newx, newz;
 	float yaw; // yaw is an angle in radians
 
-	yaw = angle*3.1416 / 180;
-
+	yaw = angle * 3.1416 / 180;
 
 	tmpx = 0;/* set to origin */
 	tmpz = distance; /* move us forward by speed */
@@ -32,23 +31,22 @@ void Move2D(GLfloat oldx, GLfloat oldz,
 
 DomeClass::DomeClass(int slicez, int stackz, GLfloat deltaz, GLfloat radiuz) // constructor
 {
-//	GLfloat x0, y0, z0;
-//	GLfloat x1, y1, z1;
-//	GLfloat x2, y2, z2;
-//	GLfloat x3, y3, z3;
+	//	GLfloat x0, y0, z0;
+	//	GLfloat x1, y1, z1;
+	//	GLfloat x2, y2, z2;
+	//	GLfloat x3, y3, z3;
 
 	slices = slicez;
 	stacks = stackz;
-	//clipHeight = clipHeightz; 
+	//clipHeight = clipHeightz;
 	delta = deltaz; // angle in degrees
 	radius = radiuz;
 	debug = false;
-
 }
 
 DomeClass::DomeClass() // constructor
 {
-	// just a shell all importanyt initialisation is done already 
+	// just a shell all importanyt initialisation is done already
 }
 
 DomeClass::DomeClass(DomeClass *d)// copy constructor
@@ -88,18 +86,18 @@ void DomeClass::render() // draw it
 	{
 		pfi = fi;
 		fi = fi + dfi;
-        pw = w;
-        ph = h;
+		pw = w;
+		ph = h;
 
 		Move2D(0, 0, fi, radius, &xx, &yy); // angle in degrees
 		h = radius - yy;
 		w = xx;
 		if (debug) printf(">> %f , %f \n", h, w);
-		for (sl = 0;sl < slices;sl++)
+		for (sl = 0; sl < slices; sl++)
 		{
 			ptheta = theta;
 			theta = theta + dtheta;
-			
+
 			if (st == 0)
 			{
 				if (startAngle == 0)
@@ -137,17 +135,15 @@ void DomeClass::render() // draw it
 				y3 = h;
 				Move2D(0, 0, ptheta, w, &x2, &z2); // angle in degrees
 				Move2D(0, 0, theta, w, &x3, &z3); // angle in degrees
-				
+
 				glBegin(GL_QUADS);
-				glVertex3f(x2, y2, z2);				
-				glVertex3f(x3, y3, z3);	
+				glVertex3f(x2, y2, z2);
+				glVertex3f(x3, y3, z3);
 				glVertex3f(x1, y1, z1);
 				glVertex3f(x0, y0, z0);
 				glEnd();
 			}
-			
 		}
-		
 	}
 }
 
