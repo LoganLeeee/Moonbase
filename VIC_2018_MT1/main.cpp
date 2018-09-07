@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-
+#include <math.h>
 #define GLUT_DISABLE_ATEXIT_HACK
 #include "glut.h"
 #include <GL/gl.h>
@@ -259,6 +259,31 @@ void drawBigDome()			//组合大碉堡
 	glPopMatrix();
 }
 
+void drawRadar()
+{
+	//int i;
+	glPushMatrix();
+	glColor3f(0.4, 0.4, 0.4);
+	glRotatef(-90, 1, 0, 0);
+	glutSolidCone(1, 5, 4, 14);
+	glutWireCone(1, 5, 4, 14);//底座
+	glPopMatrix();
+
+	glRotatef(spinAngle, 0, 1, 0);
+	glPushMatrix();
+	glTranslatef(-2 / sqrt(3) + 0.2, 5 + 2 / sqrt(3), -2 / sqrt(3) - .2);
+	/*axes->render();*/
+	glRotatef(45, 1, 1, 0);
+	glColor3f(0.2, .6, 0.2);
+	gluCylinder(quadric4, 4, 0, 2, 27, 17); //反射屏
+	glTranslatef(0, 0, -1);
+
+	glColor3f(1, 0.2, 0.2);
+	gluCylinder(quadric4, 0.1, 0.1, 3, 17, 4);//天线
+
+	glPopMatrix();
+}
+
 void drawBase1()
 {
 	glScalef(.5, .5, .5);
@@ -270,6 +295,8 @@ void drawBase1()
 	drawDomeAndConector(0);//小1
 
 	glPopMatrix();
+
+	glPushMatrix();			//两个大碉堡
 	glTranslatef(15, 0, 20);
 	drawBigDome();
 	double d = 10;
@@ -279,10 +306,13 @@ void drawBase1()
 	drawBigDome();
 	glTranslatef(9, 0,  3);
 	glColor3f(0.0, 1, 0.0);
-	drawConector(d - 6);
-	glPushMatrix();
+	drawConector(d - 6);	
 
 	glPopMatrix();
+
+	//glPushMatrix();
+	//drawRadar();
+	//glPopMatrix();
 
 	//glPushMatrix();
 	//glColor3f(0.6, 0.5, 0.4);
@@ -305,20 +335,22 @@ void drawBase2()
 	//dome0->render();
 	//glPopMatrix();
 
-	glPushMatrix();
-	glColor3f(0.4, 0.4, 0.4);
-
-	glTranslatef(10, 3, 10);
-	glRotatef(180, 1, 0, 0);
-	dome1->render();
-	glPopMatrix();
-
 	//glPushMatrix();
-	//glTranslatef(5, 1, 0);
+	//glColor3f(0.4, 0.4, 0.4);
+
+	//glTranslatef(10, 3, 10);
+	//glRotatef(180, 1, 0, 0);
+	//dome1->render();
+	//glPopMatrix();
+
+	glPushMatrix();
+	glTranslatef(32, 0, 15);
+	//glScalef(.5, .5, .5);
+	drawRadar();
 	//glRotatef(180, 1, 0, 0);
 	//glColor3f(0.3, 0.3, 0.8);
 	//dome2->render();
-	//glPopMatrix();
+	glPopMatrix();
 }
 
 static void drawWorld()
@@ -613,8 +645,8 @@ static void initGraphics(void)
 	cube = new CubeClass();
 	dome0 = new DomeClass();
 	dome1 = new DomeClass(19, 10, 9, 4);
-	dome2 = new DomeClass(17, 12, 2, 5);
-	dome2->startAngle = 10;
+	dome2 = new DomeClass(17, 12, 5, 5);
+	dome2->startAngle = 0;
 	axes = new Axes();
 	drawText2d = new Text2D();
 	grid = new Grid();

@@ -42,6 +42,7 @@ DomeClass::DomeClass(int slicez, int stackz, GLfloat deltaz, GLfloat radiuz) // 
 	delta = deltaz; // angle in degrees
 	radius = radiuz;
 	debug = false;
+
 }
 
 DomeClass::DomeClass() // constructor
