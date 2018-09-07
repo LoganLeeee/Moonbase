@@ -259,7 +259,7 @@ void drawBigDome()			//×éºÏ´óµï±¤
 	glPopMatrix();
 }
 
-void drawRadar()
+void drawRadar(GLfloat angleVar)
 {
 	//int i;
 	glPushMatrix();
@@ -269,7 +269,8 @@ void drawRadar()
 	glutWireCone(1, 5, 4, 14);//µ××ù
 	glPopMatrix();
 
-	glRotatef(spinAngle, 0, 1, 0);
+	//glRotatef(spinAngle, 0, 1, 0);
+	glRotatef( angleVar, 0, 1, 0);
 	glPushMatrix();
 	glTranslatef(-2 / sqrt(3) + 0.2, 5 + 2 / sqrt(3), -2 / sqrt(3) - .2);
 	/*axes->render();*/
@@ -346,7 +347,7 @@ void drawBase2()
 	glPushMatrix();
 	glTranslatef(32, 0, 15);
 	//glScalef(.5, .5, .5);
-	drawRadar();
+	drawRadar(angleVar);
 	//glRotatef(180, 1, 0, 0);
 	//glColor3f(0.3, 0.3, 0.8);
 	//dome2->render();
