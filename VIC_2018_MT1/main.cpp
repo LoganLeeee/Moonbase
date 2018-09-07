@@ -88,6 +88,13 @@ char dispString[255] = "2=2D (also F1-help)  3=3D  5=2D+3D";
 
 // Function prototypes needed because they are used before its declared
 
+bool mouseDown = false;
+
+float xrot = 0.0f;
+float yrot = 0.0f;
+
+float xdiff = 0.0f;
+float ydiff = 0.0f;
 
 
 void CheckGL()
@@ -227,9 +234,12 @@ void drawDomeAndConector(GLfloat angle)
 void drawBase1()
 {
 	glPushMatrix();
-	drawSphere();
-	drawCube();
-	drawCylinder();
+	glColor3f(0.6, 0.5, 0.4);
+	glTranslatef(2, 10, 10);
+	glScalef(2, 2, 2);
+	//drawSphere();
+	//drawCube();
+	//drawCylinder();
 	drawDisk(0.2); 
 
 	glPopMatrix();
@@ -241,12 +251,21 @@ void drawBase2()
 {
 	glPushMatrix();
 	glColor3f(0.6, 0.5, 0.4);
+	glTranslatef(2, 1, 10);
+	glRotatef(180, 1, 0, 0);
 	dome0->render();
+	glPopMatrix();
+
     glPushMatrix();
 	glColor3f(0.4, 0.2, 0.4);
-	glTranslatef(10, 0, 10);
+	
+	glTranslatef(10, 3, 10);
+	glRotatef(180, 1, 0, 0);
     dome1->render();
     glPopMatrix();
+
+
+	glPushMatrix();
 	glTranslatef(5, 1, 0);
 	glRotatef(180, 1, 0, 0);
 	glColor3f(0.3, 0.3, 0.8);
@@ -340,6 +359,10 @@ static void display()
 	{
 		setProjection3D();
 		seteyePoint();
+		/****       mouse control      ****/
+		glRotatef(xrot, 1.0f, 0.0f, 0.0f);
+		glRotatef(yrot, 0.0f, 1.0f, 0.0f);
+		/****       mouse control      ****/
 		drawWorld();
 	}
 
@@ -445,6 +468,9 @@ void setStartValues()
   farPlane=90;
 
   spinAngle = 0.0;
+
+  xrot = 0.0f;
+  yrot = 0.0f;
 }
 
 static void specialKey (int key, int x, int y)
@@ -481,6 +507,37 @@ void exitFunction(void)
   gluDeleteQuadric(quadric3);
   gluDeleteQuadric(quadric4);
 //  gluDeleteQuadric(quadric2);
+}
+
+/****       mouse control      ****/
+
+void mouse(int button, int state, int x, int y)
+{
+	if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
+	{
+		mouseDown = true;
+
+		//xdiff = x - eyePoint[0];
+		xdiff = x - yrot;
+		//ydiff = -y + eyePoint[1];
+		ydiff = -y + xrot;
+	}
+	else
+		mouseDown = false;
+}
+
+void mouseMotion(int x, int y)
+{
+	if (mouseDown)
+	{
+		xrot = y + ydiff;
+		yrot = x - xdiff;
+		//eyePoint[1] = y +  ydiff;
+		//eyePoint[0] = x - xdiff;
+		//eyePoint[2] = x - xdiff;
+
+		//glutPostRedisplay();
+	}
 }
 
 
@@ -575,10 +632,13 @@ int main (int argc, char * argv[])
 
   glutInitWindowSize(550, 550);
   glutInitWindowPosition(100, 75);
-  glutCreateWindow("Cube");
+  glutCreateWindow("MoonBase");
 
   initGraphics();
-  
+
+  glutMouseFunc(mouse);
+  glutMotionFunc(mouseMotion);
+
   glutDisplayFunc(display);
   glutReshapeFunc(resize);
   
