@@ -168,9 +168,10 @@ static void setProjection2D()
 	glDisable(GL_DEPTH_TEST);
 }
 
-void drawCube()
+void drawCube(double width,double longth,double hight)
 {
 	glPushMatrix();
+	glScalef(width,hight,longth);
 	cube->render();
 	glPopMatrix();
 }
@@ -208,7 +209,7 @@ void drawDome()
 {
 	//int i;
 	glPushMatrix();
-
+	
 	glPopMatrix();
 }
 
@@ -263,12 +264,12 @@ void drawRadar(GLfloat angleVar)
 {
 	//int i;
 	glPushMatrix();
-	glColor3f(0.4, 0.4, 0.4);
+	glColor3f(0.6, 0.4, 0.4);
 	glRotatef(-90, 1, 0, 0);
-	glutSolidCone(1, 5, 4, 14);
+	//glutSolidCone(1, 5, 4, 14);
 	glutWireCone(1, 5, 4, 14);//底座
 	glPopMatrix();
-
+	
 	//glRotatef(spinAngle, 0, 1, 0);
 	glRotatef( angleVar, 0, 1, 0);
 	glPushMatrix();
@@ -285,8 +286,65 @@ void drawRadar(GLfloat angleVar)
 	glPopMatrix();
 }
 
+void drawSolarPanel()			//发电模块
+{
+	//int i;
+	double w = 2;
+	double l = 3;
+	double h = .2;
+	double d = 0.25*w;
+	glPushMatrix();
+	glColor3d(.1, .1, .2);
+	drawCube(w, l, h);
+	glTranslatef(w + d, 0, 0);
+	drawCube(w, l, h);
+	glPopMatrix();
+}
+void drawSolarBase(double w = 2,double l = 3,double h = .2)
+{							//太阳能板 & 农场首个板	
+	double d = 0.25*w;
+	glPushMatrix();
+	glRotatef(10,1,0,0);	//电池板角度
+	glTranslatef(0, .5, 0);
+	glPushMatrix();
+	
+	glColor3d(.8, .8, .8);
+	drawCube(2*w+3*d,4*l+5*d,2*h);
+	glPopMatrix();
+
+	glPushMatrix();			//发电模块列阵
+	glTranslatef(-.5*(w + d), h, -1.5*(l + d));
+	drawSolarPanel();
+	for (int i = 0; i < 3; i++)
+	{
+	glTranslatef(0, 0, l + d);
+	drawSolarPanel();
+	}	
+	glPopMatrix();
+
+	glPopMatrix();
+}
+
+void drawSolarFarm(double w=2)		//太阳能农场列阵模块
+{
+	double 	d = 2 + 2 * w + 3 * 0.25*w;//新建电池板连杆长度
+
+	//int i;
+	glPushMatrix();
+	glColor3d(.8, .8, .8);
+	glRotatef(90, 0, -1, 0);
+	glScalef(.5, .5, d);
+	drawCylinder();			//电池板连杆
+	glPopMatrix();
+
+	glPushMatrix();	
+	drawSolarBase();
+	glPopMatrix();
+}
+
 void drawBase1()
 {
+	glPushMatrix();
 	glScalef(.5, .5, .5);
 	glPushMatrix();
 	glTranslatef(3, 0, 10);
@@ -298,7 +356,7 @@ void drawBase1()
 	glPopMatrix();
 
 	glPushMatrix();			//两个大碉堡
-	glTranslatef(15, 0, 20);
+	glTranslatef(15, 0, 15);
 	drawBigDome();
 	double d = 10;
 
@@ -310,11 +368,16 @@ void drawBase1()
 	drawConector(d - 6);	
 
 	glPopMatrix();
+	
+	glPushMatrix();
+	glTranslatef(5, 1, 30);
+	drawSolarBase();
+	glPopMatrix();
+
 
 	//glPushMatrix();
 	//drawRadar();
 	//glPopMatrix();
-
 	//glPushMatrix();
 	//glColor3f(0.6, 0.5, 0.4);
 	//glTranslatef(2, 10, 10);
@@ -323,34 +386,52 @@ void drawBase1()
 	////drawCube();
 	//drawCylinder();
 	//drawDisk(0.2);
-
 	//glPopMatrix();
+	glPopMatrix();
 }
 
 void drawBase2()
 {
+	glPushMatrix();
+	glScalef(.5, .5, .5);
+
 	//glPushMatrix();
 	//glColor3f(0.6, 0.5, 0.4);
 	//glTranslatef(2, 1, 10);
 	//glRotatef(180, 1, 0, 0);
 	//dome0->render();
 	//glPopMatrix();
-
 	//glPushMatrix();
 	//glColor3f(0.4, 0.4, 0.4);
-
 	//glTranslatef(10, 3, 10);
 	//glRotatef(180, 1, 0, 0);
 	//dome1->render();
 	//glPopMatrix();
 
-	glPushMatrix();
-	glTranslatef(32, 0, 15);
-	//glScalef(.5, .5, .5);
+	/**   Radar  **/
+	glPushMatrix();	
+	glTranslatef(32, 0, 15);	
 	drawRadar(angleVar);
+	glPopMatrix();
+	/**   Radar  **/
+
+	glPushMatrix();
+	double w = 2;
+	double 	dis = 2 + 2 * w + 3 * 0.25*w;
+	glTranslatef(5, 1, 30);
+	for (int i = 0; i < 4; i++)
+	{
+		glTranslatef(dis, 0, 0);
+		drawSolarFarm();
+	}
+	
+	glPopMatrix();
+
+
 	//glRotatef(180, 1, 0, 0);
 	//glColor3f(0.3, 0.3, 0.8);
 	//dome2->render();
+	//glPopMatrix();
 	glPopMatrix();
 }
 
