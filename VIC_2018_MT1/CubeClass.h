@@ -1,5 +1,5 @@
-#ifndef cubeclass_def 
-#define cubeclass_def 
+#ifndef cubeclass_def
+#define cubeclass_def
 
 #include <stdio.h>
 #include <string.h>
@@ -10,7 +10,6 @@
 #include <GL/gl.h>
 #include <GL/glu.h>
 
-
 class CubeClass
 {
 public:
@@ -18,7 +17,6 @@ public:
 	void render(); // draw it
 	void renderCW(); // draw it CW
 	void renderCCW(); // draw it CCW
-
 };
 
 #endif

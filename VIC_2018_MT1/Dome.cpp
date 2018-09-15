@@ -42,7 +42,6 @@ DomeClass::DomeClass(int slicez, int stackz, GLfloat deltaz, GLfloat radiuz) // 
 	delta = deltaz; // angle in degrees
 	radius = radiuz;
 	debug = false;
-
 }
 
 DomeClass::DomeClass() // constructor
@@ -93,7 +92,7 @@ void DomeClass::render() // draw it
 		Move2D(0, 0, fi, radius, &xx, &yy); // angle in degrees
 		h = radius - yy;
 		w = xx;
-		if (debug) printf(">> %f , %f \n", h, w);
+		//if (debug) printf(">> %f , %f \n", h, w);
 		for (sl = 0; sl < slices; sl++)
 		{
 			ptheta = theta;

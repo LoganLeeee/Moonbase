@@ -26,37 +26,34 @@ static GLuint Faces[6][4] = {
 //  glColor3f(0.0, 1.0, 1.0);
 //  glLineWidth(3);
 
-
 CubeClass::CubeClass()
 {
 }
 
 void CubeClass::renderCW()
 {
-  
-  /* Draw cube in traditional OpenGL style */
-  glBegin(GL_QUADS);
-	for (int face = 0; face < 6; face++) 
-		{
-		for (int vert = 0; vert < 4; vert ++)
+	/* Draw cube in traditional OpenGL style */
+	glBegin(GL_QUADS);
+	for (int face = 0; face < 6; face++)
+	{
+		for (int vert = 0; vert < 4; vert++)
 			glVertex3fv(Verts[Faces[face][vert]]);
-		}
+	}
 
-  glEnd();
+	glEnd();
 }
 
 void CubeClass::renderCCW()
 {
-  
-  /* Draw cube in traditional OpenGL style */
-  glBegin(GL_QUADS);
-	for (int face = 0; face < 6; face++) 
-		{
+	/* Draw cube in traditional OpenGL style */
+	glBegin(GL_QUADS);
+	for (int face = 0; face < 6; face++)
+	{
 		for (int vert = 3; vert >= 0; vert--)
 			glVertex3fv(Verts[Faces[face][vert]]);
-		}
+	}
 
-  glEnd();
+	glEnd();
 }
 
 void CubeClass::render()

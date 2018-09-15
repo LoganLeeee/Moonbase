@@ -15,13 +15,14 @@
 #include "Dome.h"
 #include "2DText.h"
 #include "grid.h"
+#include"fractal.h"
 
 #pragma warning(disable : 4996) // Reduce unsafe warning messages
 
 #define framesPerSecond 25
 #define timerMSecs ((int)1000/framesPerSecond)  // compute time in miliseconds for a frame
 bool timeForNextFrame = false;
-
+double hsize = 2.0;
 #define ESC	  27
 
 #define cmdRed		 1
@@ -52,6 +53,13 @@ static GLfloat	yellow[] = { 1.0, 1.0, 0.0 };
 static GLfloat	black[] = { 0.0, 0.0, 0.0 };
 static GLfloat	white[] = { 1.0, 1.0, 1.0 };
 
+fractal* f;
+float center[] = { 0, 0, 0 };
+float eye[] = { 0, 0, 20 };
+float tx, ty = 10, ax, ay = 10, mx, my, zoom = 0;
+bool isLine = false;
+bool isDown = false;
+
 CubeClass *cube; // pointer to a cube object
 GLUquadricObj *quadric1;
 GLUquadricObj *quadric2;
@@ -69,9 +77,11 @@ int showBase1 = true;
 int showBase2 = false;
 int showWireFrame = true;
 int showSpin = false;
+int showLand = false;
 int showChrisTrapani = false; // change center of spin
+int lightOn = false;
 
-int hiddenDepth = false;
+int hiddenDepth = true;
 int hiddenCull = false;
 int clockWise = false; // start CCW
 GLfloat angle = 0;
@@ -93,6 +103,12 @@ float yrot = 0.0f;
 
 float xdiff = 0.0f;
 float ydiff = 0.0f;
+/*******Control car *******/
+static GLfloat	cubeAngle = 90;
+GLfloat posx, posz = 0.15;
+GLfloat  speed = 0.0;
+bool autoMove = false;
+bool CM = false;
 
 void CheckGL()
 {
@@ -168,10 +184,45 @@ static void setProjection2D()
 	glDisable(GL_DEPTH_TEST);
 }
 
-void drawCube(double width,double longth,double hight)
+static void light(void)
+{
+	//材质反光性设置
+	GLfloat mat_specular[] = { 1, 1, 1, 1.0 };  //镜面反射参数
+	GLfloat mat_shininess[] = { 50.0 };               //高光指数
+	GLfloat light_position[] = { 1.0, 1.0, 1.0, 0.0 };
+	GLfloat white_light[] = { 1.0, 1.0, 1.0, 1.0 };   //灯位置(1,1,1), 最后1-开关
+	GLfloat Light_Model_Ambient[] = { 0.2, 0.2, 0.2, 1.0 }; //环境光参数
+
+	glClearColor(0.0, 0.0, 0.0, 0.0);  //背景色
+	glShadeModel(GL_SMOOTH);           //多变性填充模式
+
+	//材质属性
+	glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
+	//glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_specular);
+	glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
+
+	//灯光设置
+	glLightfv(GL_LIGHT0, GL_POSITION, light_position);
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, white_light);   //散射光属性
+	glLightfv(GL_LIGHT0, GL_SPECULAR, white_light);  //镜面反射光
+	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, Light_Model_Ambient);  //环境光参数
+	if (lightOn)
+	{
+		glEnable(GL_LIGHTING);   //开关:使用光
+		glEnable(GL_LIGHT0);     //打开0#灯
+	}
+	else
+	{
+		glDisable(GL_LIGHTING);
+		glDisable(GL_LIGHT0);
+	}
+	glEnable(GL_DEPTH_TEST); //打开深度测试
+}
+
+void drawCube(double width, double longth, double hight)
 {
 	glPushMatrix();
-	glScalef(width,hight,longth);
+	glScalef(width, hight, longth);
 	cube->render();
 	glPopMatrix();
 }
@@ -198,25 +249,42 @@ void drawCone(GLfloat smallEndRadius) //  raduis 0 = Cone  0.5 = Cylinder  圆锥
 	glPopMatrix();
 }
 
-void drawSphere() //球
+void drawHemiSphere(double size = 2.0) //半球
 {
 	glPushMatrix();
-	gluSphere(quadric2, 0.5, 13, 13);
+	//double clipEq[16][4];
+	GLdouble eqn[4] = { 0.0,1.0,0.0,0.5 };
+	glClipPlane(GL_CLIP_PLANE0, eqn);
+	glEnable(GL_CLIP_PLANE0);
+	gluSphere(quadric1, size, 13, 13);
+	glDisable(GL_CLIP_PLANE0);
+	//for (int i = 0; i < 16; i++)
+	//{
+	//	glClipPlane(GL_CLIP_PLANE0, clipEq[i]);
+	//	glPushMatrix();
+	//	// Transform
+	//	gluSphere(quadric1, 0.5, 13, 13);
 	glPopMatrix();
+	//}
 }
 
-void drawDome()
-{
-	//int i;
-	glPushMatrix();
-	
-	glPopMatrix();
-}
+//void drawSphere() //球
+//{
+//	glPushMatrix();
+//	gluSphere(quadric2, 0.5, 13, 13);
+//	glPopMatrix();
+//}
+//
+//void drawDome()
+//{
+//	//int i;
+//	glPushMatrix();
+//
+//	glPopMatrix();
+//}
 
 void drawConector(int conectorlong = 4)
 {
-	//int conectorlong = 4;
-
 	glPushMatrix();						 	//Conector tunnel
 	//glColor3f(0.6, 0.5, 1);
 	/*glTranslatef(0, 0, 0);*/
@@ -237,12 +305,13 @@ void drawDomeAndConector(GLfloat angle)
 	glPushMatrix();
 
 	glColor3f(0.6, 0.5, 0.4);
-
-	glTranslatef(0, 1, 0);
 	glRotatef(angle, 0, 1, 0);
-	glRotatef(180, 1, 0, 0);
-	dome0->render();
-	glTranslatef(0, 1, -5.5);
+	//glTranslatef(0, 1, 0);
+
+	//glRotatef(180, 1, 0, 0);
+	//dome0->render();
+	drawHemiSphere(2.5);
+	glTranslatef(0, 1, 1.5);
 	glColor3f(0.6, 0.5, 1);
 	drawConector();
 	glPopMatrix();
@@ -250,13 +319,15 @@ void drawDomeAndConector(GLfloat angle)
 void drawBigDome()			//组合大碉堡
 {
 	//int i;
-	glPushMatrix();	
+	glPushMatrix();
 	drawDomeAndConector(90);//小
 
-	glTranslatef(9, 3, 0);
-	glRotatef(180, 1, 0, 0);
+	//glTranslatef(9, 3, 0);
+	glTranslatef(8.5, 0, 0);
 	glColor3f(0.4, 0.4, 0.4);
-	dome1->render();		//大
+	//glRotatef(180, 1, 0, 0);
+		//dome1->render();
+	drawHemiSphere(3.8);	//大
 	glPopMatrix();
 }
 
@@ -269,9 +340,9 @@ void drawRadar(GLfloat angleVar)
 	//glutSolidCone(1, 5, 4, 14);
 	glutWireCone(1, 5, 4, 14);//底座
 	glPopMatrix();
-	
+
 	//glRotatef(spinAngle, 0, 1, 0);
-	glRotatef( angleVar, 0, 1, 0);
+	glRotatef(angleVar, 0, 1, 0);
 	glPushMatrix();
 	glTranslatef(-2 / sqrt(3) + 0.2, 5 + 2 / sqrt(3), -2 / sqrt(3) - .2);
 	/*axes->render();*/
@@ -300,16 +371,16 @@ void drawSolarPanel()			//发电模块
 	drawCube(w, l, h);
 	glPopMatrix();
 }
-void drawSolarBase(double w = 2,double l = 3,double h = .2)
-{							//太阳能板 & 农场首个板	
+void drawSolarBase(double w = 2, double l = 3, double h = .2)
+{							//太阳能板 & 农场首个板
 	double d = 0.25*w;
 	glPushMatrix();
-	glRotatef(10,1,0,0);	//电池板角度
+	glRotatef(10, 1, 0, 0);	//电池板角度
 	glTranslatef(0, .5, 0);
 	glPushMatrix();
-	
+
 	glColor3d(.8, .8, .8);
-	drawCube(2*w+3*d,4*l+5*d,2*h);
+	drawCube(2 * w + 3 * d, 4 * l + 5 * d, 2 * h);
 	glPopMatrix();
 
 	glPushMatrix();			//发电模块列阵
@@ -317,15 +388,15 @@ void drawSolarBase(double w = 2,double l = 3,double h = .2)
 	drawSolarPanel();
 	for (int i = 0; i < 3; i++)
 	{
-	glTranslatef(0, 0, l + d);
-	drawSolarPanel();
-	}	
+		glTranslatef(0, 0, l + d);
+		drawSolarPanel();
+	}
 	glPopMatrix();
 
 	glPopMatrix();
 }
 
-void drawSolarFarm(double w=2)		//太阳能农场列阵模块
+void drawSolarFarm(double w = 2)		//太阳能农场列阵模块
 {
 	double 	d = 2 + 2 * w + 3 * 0.25*w;//新建电池板连杆长度
 
@@ -337,7 +408,7 @@ void drawSolarFarm(double w=2)		//太阳能农场列阵模块
 	drawCylinder();			//电池板连杆
 	glPopMatrix();
 
-	glPushMatrix();	
+	glPushMatrix();
 	drawSolarBase();
 	glPopMatrix();
 }
@@ -346,10 +417,19 @@ void drawBase1()
 {
 	glPushMatrix();
 	glScalef(.5, .5, .5);
+
+	glPushMatrix();
+	glTranslatef(posx, 0, posz);
+	glRotatef(cubeAngle, 0.0, 1.0, 0.0);
+	drawCube(2, 2, 2);
+	//drawHemiSphere();
+	glPopMatrix();
+
 	glPushMatrix();
 	glTranslatef(3, 0, 10);
 	drawDomeAndConector(0);//小2
-
+	//glTranslatef(3, 0, 0);
+	//drawHemiSphere(hsize);
 	glTranslatef(0, 0, -7);
 	drawDomeAndConector(0);//小1
 
@@ -363,17 +443,16 @@ void drawBase1()
 	glTranslatef(0, 0, -d);
 
 	drawBigDome();
-	glTranslatef(9, 0,  3);
+	glTranslatef(8, 1, 3);
 	glColor3f(0.0, 1, 0.0);
-	drawConector(d - 6);	
+	drawConector(d - 6);
 
 	glPopMatrix();
-	
+
 	glPushMatrix();
 	glTranslatef(5, 1, 30);
 	drawSolarBase();
 	glPopMatrix();
-
 
 	//glPushMatrix();
 	//drawRadar();
@@ -395,26 +474,13 @@ void drawBase2()
 	glPushMatrix();
 	glScalef(.5, .5, .5);
 
-	//glPushMatrix();
-	//glColor3f(0.6, 0.5, 0.4);
-	//glTranslatef(2, 1, 10);
-	//glRotatef(180, 1, 0, 0);
-	//dome0->render();
-	//glPopMatrix();
-	//glPushMatrix();
-	//glColor3f(0.4, 0.4, 0.4);
-	//glTranslatef(10, 3, 10);
-	//glRotatef(180, 1, 0, 0);
-	//dome1->render();
-	//glPopMatrix();
-
 	/**   Radar  **/
-	glPushMatrix();	
-	glTranslatef(32, 0, 15);	
+	glPushMatrix();
+	glTranslatef(32, 0, 15);
 	drawRadar(angleVar);
 	glPopMatrix();
 	/**   Radar  **/
-
+	/****  Solar Farm Ⅱ ****/
 	glPushMatrix();
 	double w = 2;
 	double 	dis = 2 + 2 * w + 3 * 0.25*w;
@@ -424,10 +490,21 @@ void drawBase2()
 		glTranslatef(dis, 0, 0);
 		drawSolarFarm();
 	}
-	
+	/****  Solar Farm Ⅱ  ****/
 	glPopMatrix();
 
-
+	//glPushMatrix();
+//glColor3f(0.6, 0.5, 0.4);
+//glTranslatef(2, 1, 10);
+//glRotatef(180, 1, 0, 0);
+//dome0->render();
+//glPopMatrix();
+//glPushMatrix();
+//glColor3f(0.4, 0.4, 0.4);
+//glTranslatef(10, 3, 10);
+//glRotatef(180, 1, 0, 0);
+//dome1->render();
+//glPopMatrix();
 	//glRotatef(180, 1, 0, 0);
 	//glColor3f(0.3, 0.3, 0.8);
 	//dome2->render();
@@ -456,10 +533,19 @@ static void drawWorld()
 	}
 	if (showGrid)
 	{
+		//showLand = false;
 		glColor3f(0.5, 0.5, 0);
 		grid->render();
 	}
+	if (showLand)
+	{
+		showGrid = false;
 
+		glPushMatrix();
+		glTranslatef(centerX, 0, centerZ);
+		f->draw();
+		glPopMatrix();
+	}
 	if (showAxes)
 	{
 		axes->render();
@@ -476,38 +562,43 @@ static void drawWorld()
 		drawBase2();
 	}
 	if (showSpin) glPopMatrix();
-
+	//if (lightOn) { light(); }
 	glPopMatrix();
 }
 
-void draw2DStuff()
-{
-	glColor3f(1, 1, 0);
-	glRasterPos2f(30, 60);
-
-	//glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, 'A');
-	//drawText2d->drawstr(30, 30, "%s (%d)",dispString,45);
-
-	drawText2d->drawstr(10, 530, "%s %8.2f,%8.2f,%8.2f, ", "EyePoint", eyePoint[0], eyePoint[1], eyePoint[2]);
-
-	drawText2d->drawstr(10, 500, "%s", "2 - 2D mode and help");
-	drawText2d->drawstr(10, 470, "%s", "3 - 3D mode");
-	drawText2d->drawstr(10, 440, "%s", "5 - 2D & 3D mode");
-	drawText2d->drawstr(10, 410, "%s", "g - grid");
-	drawText2d->drawstr(10, 380, "%s", "a - axes");
-	drawText2d->drawstr(10, 350, "%s", "w - Wireframe");
-	drawText2d->drawstr(10, 320, "%s", "o - Space Base one");
-	drawText2d->drawstr(10, 290, "%s", "t - space Base two");
-	drawText2d->drawstr(10, 260, "%s", "F1 - This help");
-	drawText2d->drawstr(10, 230, "%s", "Arrows and pgup/pgdown comma and dot move eyepos");
-	drawText2d->drawstr(10, 200, "%s", "Space = start / stop spin");
-	drawText2d->drawstr(10, 170, "%s", "F2 - restore start view");
-
-	drawText2d->drawstr(10, 150, "%s", "d - depth buffer");
-	drawText2d->drawstr(10, 130, "%s", "c - cull hidden  @-swaps CW/CCW");
-	drawText2d->drawstr(10, 110, "%s", "/ - spin speed");
-	drawText2d->drawstr(10, 90, "%s", "+,- and = sets angle variable");
-}
+//void draw2DStuff()
+//{
+//	glColor3f(1, 1, 0);
+//	glRasterPos2f(30, 60);
+//	/*glScalef(.6,.6,.6);*/
+//	//glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, 'A');
+//	//drawText2d->drawstr(30, 30, "%s (%d)",dispString,45);
+//	int sl = 550;//startline
+//	int d = 20;
+//	drawText2d->drawstr(10, sl-=d, "%s %8.2f,%8.2f,%8.2f, ",   "EyePoint   ", eyePoint[0], eyePoint[1], eyePoint[2]);
+//	drawText2d->drawstr(10, sl -= d, "%s %8.2f,%8.2f,%8.2f, ", "lookAtPoint", lookAtPoint[0], lookAtPoint[1], lookAtPoint[2]);
+//	drawText2d->drawstr(10, sl -= d, "%s %8.2f,%8.2f,%8.2f, ", "upVec      ", upVec[0], upVec[1], upVec[2]);
+//
+//	drawText2d->drawstr(10, sl -= d, "%s", "2 - 2D mode and help",30);
+//	drawText2d->drawstr(10, sl -= d, "%s", "3 - 3D mode");
+//	drawText2d->drawstr(10, sl -= d, "%s", "5 - 2D & 3D mode");
+//	drawText2d->drawstr(10, sl -= d, "%s", "g - grid");
+//	drawText2d->drawstr(10, sl -= d, "%s", "a - axes");
+//	drawText2d->drawstr(10, sl -= d, "%s", "w - Wireframe");
+//	drawText2d->drawstr(10, sl -= d, "%s", "o - Space Base one");
+//	drawText2d->drawstr(10, sl -= d, "%s", "t - space Base two");
+//	drawText2d->drawstr(10, sl -= d, "%s", "l - Show simulated terrain");
+//	drawText2d->drawstr(10, sl -= d, "%s", "F1 - This help");
+//	drawText2d->drawstr(10, sl -= d, "%s", "Arrows and pgup/pgdown comma and dot move eyepos");
+//	drawText2d->drawstr(10, sl -= d, "%s", "Space = start / stop spin");
+//	drawText2d->drawstr(10, sl -= d, "%s", "F2 - restore start view");
+//
+//	drawText2d->drawstr(10, sl -= d, "%s", "d - depth buffer");
+//	drawText2d->drawstr(10, sl -= d, "%s", "c - cull hidden  @-swaps CW/CCW");
+//	drawText2d->drawstr(10, sl -= d, "%s", "/ - spin speed");
+//	drawText2d->drawstr(10, sl -= d, "%s", "+,- and = sets angle variable");
+//	drawText2d->drawstr(10, sl -= d, "%s", "[ and ] sets field of view");
+//}
 
 static void display()
 {
@@ -519,16 +610,21 @@ static void display()
 		setProjection3D();
 		seteyePoint();
 		/****       mouse control      ****/
+		//axes->render();
 		glRotatef(xrot, 1.0f, 0.0f, 0.0f);
 		glRotatef(yrot, 0.0f, 1.0f, 0.0f);
+
 		/****       mouse control      ****/
+
+		glTranslatef(-centerX, 0, -centerZ);
+		light();
 		drawWorld();
 	}
 
 	if (mode == 2 || mode == 5)
 	{
 		setProjection2D();
-		draw2DStuff();
+		drawText2d->draw2DStuff(eyePoint, lookAtPoint, upVec, CM, autoMove, hsize);
 	}
 	/* Check everything OK and update screen */
 	CheckGL();
@@ -579,40 +675,84 @@ static void asciiKey(unsigned char key, int x, int y)
 {
 	if (key == ESC)
 		menuChoice(cmdExit);
+	if (key == '0') { CM = !CM; }
+	if (CM == false)
+	{
+		if (key == '2') { mode = 2; strcpy(dispString, "2D Mode"); }
+		if (key == '3') { mode = 3; strcpy(dispString, "3D Mode"); }
+		if (key == '5') { mode = 5; strcpy(dispString, "2D+3D Mode"); }
+		if (key == 'g') { showGrid = !showGrid; }
+		if (key == 'a') { showAxes = !showAxes; }
+		if (key == 'o') { showBase1 = !showBase1; }
+		if (key == 't') { showBase2 = !showBase2; }
+		if (key == 'w') { showWireFrame = !showWireFrame; }
+		if (key == ' ') { showSpin = !showSpin; }
 
-	if (key == '2') { mode = 2; strcpy(dispString, "2D Mode"); }
-	if (key == '3') { mode = 3; strcpy(dispString, "3D Mode"); }
-	if (key == '5') { mode = 5; strcpy(dispString, "2D+3D Mode"); }
-	if (key == 'g') { showGrid = !showGrid; }
-	if (key == 'a') { showAxes = !showAxes; }
-	if (key == 'o') { showBase1 = !showBase1; }
-	if (key == 't') { showBase2 = !showBase2; }
-	if (key == 'w') { showWireFrame = !showWireFrame; }
-	if (key == ' ') { showSpin = !showSpin; }
+		if (key == 'd') { hiddenDepth = !hiddenDepth; }
+		if (key == 'c') { hiddenCull = !hiddenCull; }
+		if (key == '@') { clockWise = !clockWise; }
+		if (key == '/') { spinIncrement = spinIncrement + 1; if (spinIncrement > 4) { spinIncrement = 0.4f; } }
+		if (key == 'j') { showChrisTrapani = !showChrisTrapani; }
+		if (key == 'l') { showLand = !showLand; }
+		if (key == '=') { if (angle < 50) angle = 90; else angle = 0; }
+		if (key == '+') { angle = angle + 10; angle = (GLfloat)((int)angle % 360); }
+		if (key == '-') { angle = angle - 10; angle = (GLfloat)((int)angle % 360); }
+		if (key == 'h') { hsize = hsize + 0.1; }
+		if (key == 'j') { hsize = hsize - 0.1; }
 
-	if (key == 'd') { hiddenDepth = !hiddenDepth; }
-	if (key == 'c') { hiddenCull = !hiddenCull; }
-	if (key == '@') { clockWise = !clockWise; }
-	if (key == '/') { spinIncrement = spinIncrement + 1; if (spinIncrement > 4) { spinIncrement = 0.4f; } }
-	//if (key =='j') {showChrisTrapani=!showChrisTrapani;}
+		//if (key == '.') { eyePoint[0] = eyePoint[0] + 2; eyePoint[2] = eyePoint[2] + 2; }
+		//if (key == ',') { eyePoint[0] = eyePoint[0] - 2; eyePoint[2] = eyePoint[2] - 2; }
+		if (key == '.') { lookAtPoint[0] = lookAtPoint[0] + 2; }
+		if (key == ',') { lookAtPoint[0] = lookAtPoint[0] - 2; }
+		if (key == '[') { fov -= 3; }
+		if (key == ']') { fov += 3; }
+		if (key == 'k') { lightOn = !lightOn; }
+	}
+	else
+	{
+		if (key == 'a' || key == 'A')
+		{
+			cubeAngle = cubeAngle + 10;
+			if (cubeAngle > 360) cubeAngle = 0;
+		}
+		if (key == 'd' || key == 'D')
+		{
+			cubeAngle = cubeAngle - 10;
+			if (cubeAngle < -360) cubeAngle = 0;
+		}
 
-	if (key == '=') { if (angle < 50) angle = 90; else angle = 0; }
-	if (key == '+') { angle = angle + 10; angle = (GLfloat)((int)angle % 360); }
-	if (key == '-') { angle = angle - 10; angle = (GLfloat)((int)angle % 360); }
-
-	if (key == '.') { eyePoint[0] = eyePoint[0] + 2; eyePoint[2] = eyePoint[2] + 2; }
-	if (key == ',') { eyePoint[0] = eyePoint[0] - 2; eyePoint[2] = eyePoint[2] - 2; }
+		if (key == 's' || key == 'S')
+		{
+			speed = speed - 0.05;
+			if (speed < -.5) speed = -.5;
+		}
+		if (key == 'w' || key == 'W')
+		{
+			//autoMove = !autoMove;
+			autoMove = true;
+			if (autoMove)
+			{
+				speed = speed + 0.05;
+				if (speed > .5) speed = .5;
+			}
+			else
+			{
+				speed = 0.00;
+			}
+		}
+		//printf("CM on %f", speed);
+	}
 }
 
 void setStartValues()
 {
-	eyePoint[0] = 12.0;
-	eyePoint[1] = 12.0;
-	eyePoint[2] = 26.0;
+	eyePoint[0] = -14.0;
+	eyePoint[1] = 22.0;
+	eyePoint[2] = 4.0;
 
-	lookAtPoint[0] = 0;
-	lookAtPoint[1] = 0;
-	lookAtPoint[2] = 0;
+	lookAtPoint[0] = -4;
+	lookAtPoint[1] = -8;
+	lookAtPoint[2] = -4;
 
 	upVec[0] = 0;
 	upVec[1] = 1;
@@ -637,12 +777,12 @@ static void specialKey(int key, int x, int y)
 		setStartValues();
 	}
 
-	if (key == GLUT_KEY_LEFT) eyePoint[0] = eyePoint[0] + 2;
-	if (key == GLUT_KEY_RIGHT) eyePoint[0] = eyePoint[0] - 2;
-	if (key == GLUT_KEY_UP) eyePoint[2] = eyePoint[2] - 2;
-	if (key == GLUT_KEY_DOWN) eyePoint[2] = eyePoint[2] + 2;
-	if (key == GLUT_KEY_PAGE_UP) eyePoint[1] = eyePoint[1] + 2;
-	if (key == GLUT_KEY_PAGE_DOWN) eyePoint[1] = eyePoint[1] - 2;
+	if (key == GLUT_KEY_LEFT) { eyePoint[0] = eyePoint[0] - 2; lookAtPoint[0] = lookAtPoint[0] - 2; }
+	if (key == GLUT_KEY_RIGHT) { eyePoint[0] = eyePoint[0] + 2; lookAtPoint[0] = lookAtPoint[0] + 2; }
+	if (key == GLUT_KEY_UP) { eyePoint[2] = eyePoint[2] - 2; lookAtPoint[2] = lookAtPoint[2] - 2; }
+	if (key == GLUT_KEY_DOWN) { eyePoint[2] = eyePoint[2] + 2; lookAtPoint[2] = lookAtPoint[2] + 2; }
+	if (key == GLUT_KEY_PAGE_UP) { eyePoint[1] = eyePoint[1] + 2; lookAtPoint[1] = lookAtPoint[1] + 2; }
+	if (key == GLUT_KEY_PAGE_DOWN) { eyePoint[1] = eyePoint[1] - 2; lookAtPoint[1] = lookAtPoint[1] - 2; }
 }
 
 void exitFunction(void)
@@ -662,11 +802,38 @@ void exitFunction(void)
 	//  gluDeleteQuadric(quadric2);
 }
 
+/*****     Control Mode     *****/
+
+void MovePlane2D(GLfloat oldx, GLfloat oldz,
+	GLfloat angle, GLfloat speed, // angle in degrees
+	GLfloat *resultx, GLfloat *resultz)
+{
+	GLfloat tmpx, tmpz;
+	GLfloat newx, newz;
+	float yaw; // yaw is an angle in radians
+
+	yaw = angle * 3.1416 / 180;
+
+	tmpx = 0;/* set to origin */
+	tmpz = speed; /* move us forward by speed */
+
+	newx = (tmpz * sin(yaw)) + (tmpx * cos(yaw));
+	newz = (tmpz * cos(yaw)) - (tmpx * sin(yaw));
+	tmpx = newx;
+	tmpz = newz;
+
+	newx = tmpx + oldx; // adjust because it was around the origin
+	newz = tmpz + oldz;
+
+	*resultx = newx;
+	*resultz = newz;
+}
+
 /****       mouse control      ****/
 
 void mouse(int button, int state, int x, int y)
 {
-	if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
+	if (button == GLUT_MIDDLE_BUTTON && state == GLUT_DOWN)
 	{
 		mouseDown = true;
 
@@ -688,7 +855,6 @@ void mouseMotion(int x, int y)
 		//eyePoint[1] = y +  ydiff;
 		//eyePoint[0] = x - xdiff;
 		//eyePoint[2] = x - xdiff;
-
 		//glutPostRedisplay();
 	}
 }
@@ -738,6 +904,23 @@ static void initGraphics(void)
 	quadric3 = gluNewQuadric();
 	quadric4 = gluNewQuadric();
 
+	glShadeModel(GL_SMOOTH);
+
+	glColor4f(1.0, 1.0, 1.0, 1.0f);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+	glEnable(GL_COLOR_MATERIAL);
+	glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
+	// height : 值越大，地形起伏越大
+	// times  : 迭代次数，次数越多，tire越多
+	// step   : 绘制时一个网格的程度
+	// D      : 随机数衰减因子，越大随机数随迭代的取值越小（大于1）
+	// seed   : 随机数种子
+	int a = 0;
+
+	f = new fractal(1, 3, 3, 12, 10086);
+	printf("\n%d", a);
+	f->calculate();
+
 	atexit(exitFunction);
 }
 
@@ -770,6 +953,14 @@ static void idleRoutine(void)
 			angleVar = angleVar - 1;
 			if (angleVar < angle) angleVar = angle;
 		}
+		if (autoMove)
+		{
+			if (posx > 20 || posz > 20 || posx < -1 || posz < -1)
+			{
+				cubeAngle = 40 + cubeAngle;
+			}
+			MovePlane2D(posx, posz, cubeAngle, speed, &posx, &posz);
+		}
 	}
 }
 
@@ -778,8 +969,12 @@ int main(int argc, char * argv[])
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_DEPTH | GLUT_RGB);
 
-	glutInitWindowSize(550, 550);
-	glutInitWindowPosition(100, 75);
+	GLfloat AmbientLight[4] = { 1,1,1,1 };
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, AmbientLight);
+	glEnable(GL_LIGHTING);
+	glEnable(GL_LIGHT0);
+	glutInitWindowSize(750, 550);
+	glutInitWindowPosition(200, 75);
 	glutCreateWindow("MoonBase");
 
 	initGraphics();

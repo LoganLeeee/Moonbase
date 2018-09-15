@@ -7,19 +7,18 @@ class Axes //: public renderableParent
 {
 protected:
 
-void drawLabelledAxesP(GLfloat len, GLfloat TxtSize);
+	void drawLabelledAxesP(GLfloat len, GLfloat TxtSize);
 
 public:
-GLfloat length;
-GLfloat textSize;
+	GLfloat length;
+	GLfloat textSize;
 
-void setlen(GLfloat len);
-void setTextSize(GLfloat t);
+	void setlen(GLfloat len);
+	void setTextSize(GLfloat t);
 
-virtual int render();
-void drawAxesP(GLfloat len);
-Axes();
-
+	virtual int render();
+	void drawAxesP(GLfloat len);
+	Axes();
 };
 
 #endif

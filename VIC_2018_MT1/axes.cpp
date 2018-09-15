@@ -15,18 +15,17 @@
 // Functions to draw orthogonal x,y,z axes,
 // Colourblind persons may wish to change this to avoid the Red-Green combo.
 
-
 // GLfloat length;
 // bool textSize;
 
 void Axes::setlen(GLfloat len)
 {
-	length=len;
+	length = len;
 }
 
 void Axes::setTextSize(GLfloat t)
 {
-	textSize=t;
+	textSize = t;
 }
 
 int Axes::render()
@@ -41,61 +40,59 @@ int Axes::render()
 Axes::Axes()
 {
 	//init();
-	length=1;
-	textSize=0.2f;
+	length = 1;
+	textSize = 0.2f;
 }
 
 void Axes::drawAxesP(GLfloat len)
 {
-   glBegin(GL_LINES);
-     //red x axis
-     glColor3f(1, 0.0, 0.0);
-     glVertex3f(0.0, 0.0, 0.0);
-     glVertex3f(len, 0.0, 0.0);
-     //green y axis
-     glColor3f(0.0, 1.0, 0.0);
-     glVertex3f(0.0, 0.0, 0.0);
-     glVertex3f(0.0, len, 0.0);
-     //blue z axis
-     glColor3f(0.0, 0.0, 1.0);
-     glVertex3f(0.0, 0.0, 0.0);
-     glVertex3f(0.0, 0.0, len);
-   glEnd();
+	glBegin(GL_LINES);
+	//red x axis
+	glColor3f(1, 0.0, 0.0);
+	glVertex3f(0.0, 0.0, 0.0);
+	glVertex3f(len, 0.0, 0.0);
+	//green y axis
+	glColor3f(0.0, 1.0, 0.0);
+	glVertex3f(0.0, 0.0, 0.0);
+	glVertex3f(0.0, len, 0.0);
+	//blue z axis
+	glColor3f(0.0, 0.0, 1.0);
+	glVertex3f(0.0, 0.0, 0.0);
+	glVertex3f(0.0, 0.0, len);
+	glEnd();
 }
 
 void Axes::drawLabelledAxesP(GLfloat len, GLfloat TxtSize)
 {
-  GLfloat lenP;
-  lenP=len+TxtSize;
-  drawAxesP(len);
-  glBegin(GL_LINES);
-    // Paint an "X" in red...
-    glColor3f (1.0, 0.0, 0.0);
-    glVertex3f(lenP, TxtSize, TxtSize);
-    glVertex3f(lenP,-TxtSize,-TxtSize);
+	GLfloat lenP;
+	lenP = len + TxtSize;
+	drawAxesP(len);
+	glBegin(GL_LINES);
+	// Paint an "X" in red...
+	glColor3f(1.0, 0.0, 0.0);
+	glVertex3f(lenP, TxtSize, TxtSize);
+	glVertex3f(lenP, -TxtSize, -TxtSize);
 
-    glVertex3f(lenP, TxtSize,-TxtSize);
-    glVertex3f(lenP,-TxtSize, TxtSize);
+	glVertex3f(lenP, TxtSize, -TxtSize);
+	glVertex3f(lenP, -TxtSize, TxtSize);
 
-    // Paint a "Y" in green...
-    glColor3f(0.0, 0.8f, 0.0);
-    glVertex3f( TxtSize,lenP, TxtSize);
-    glVertex3f(-TxtSize,lenP,-TxtSize);
+	// Paint a "Y" in green...
+	glColor3f(0.0, 0.8f, 0.0);
+	glVertex3f(TxtSize, lenP, TxtSize);
+	glVertex3f(-TxtSize, lenP, -TxtSize);
 
-    glVertex3f(TxtSize, lenP,-TxtSize);
-    glVertex3f(0.0,  lenP, 0.0);
+	glVertex3f(TxtSize, lenP, -TxtSize);
+	glVertex3f(0.0, lenP, 0.0);
 
-    // Paint a "Z", in blue...
-    glColor3f(0.0, 0.0, 1.0);
-    glVertex3f( TxtSize, TxtSize, lenP);
-    glVertex3f(-TxtSize,-TxtSize, lenP);
+	// Paint a "Z", in blue...
+	glColor3f(0.0, 0.0, 1.0);
+	glVertex3f(TxtSize, TxtSize, lenP);
+	glVertex3f(-TxtSize, -TxtSize, lenP);
 
-    glVertex3f( TxtSize, TxtSize, lenP);
-    glVertex3f(-TxtSize, TxtSize, lenP);
+	glVertex3f(TxtSize, TxtSize, lenP);
+	glVertex3f(-TxtSize, TxtSize, lenP);
 
-    glVertex3f( TxtSize, -TxtSize, lenP);
-    glVertex3f(-TxtSize, -TxtSize, lenP);
-  glEnd();
+	glVertex3f(TxtSize, -TxtSize, lenP);
+	glVertex3f(-TxtSize, -TxtSize, lenP);
+	glEnd();
 }
-
-

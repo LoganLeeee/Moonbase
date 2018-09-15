@@ -10,27 +10,24 @@
 #include <GL/gl.h>
 #include <GL/glu.h>
 
-class Grid 
+class Grid
 {
 protected:
 
-GLfloat xsize;
-GLfloat zsize;
-int xsteps;
-int zsteps;
+	GLfloat xsize;
+	GLfloat zsize;
+	int xsteps;
+	int zsteps;
 
 public:
 
+	void setUp(GLfloat xsizeZ, GLfloat zsizeZ, int xstepsZ, int zstepsZ);
 
-void setUp(GLfloat xsizeZ, GLfloat zsizeZ, int xstepsZ, int zstepsZ);
-
-int render();
-int renderCW();
-int renderLines(); // 
-Grid();
-~Grid();
-
+	int render();
+	int renderCW();
+	int renderLines(); //
+	Grid();
+	~Grid();
 };
-
 
 #endif
